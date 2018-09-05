@@ -6,7 +6,7 @@ const {todo} = require('./../models/todos.js');
 
 
 
-describe('test post to API',() => {
+describe('POST',() => {
 
   beforeEach('drop the db before each test',(done) =>{
 
@@ -58,12 +58,18 @@ describe('test post to API',() => {
 
 });
 
-describe('test GET from API',() => {
+describe('GET',() => {
   var todosForTest = [{text:"test Text"},{text:"test Text 2"}];
+  var todoIdForTest;
 
   beforeEach('drop the db before each test',(done) =>{
     todo.remove({}).then(() => {
-        todo.insertMany(todosForTest).then(() => done());
+        todo.insertMany(todosForTest).then((docs) => {
+          todoIdForTest = docs[0]._id;
+          // console.log(docs);
+              // worngID = todoIdForTest.replace('todoIdForTest.charAt(3)','t');
+          done();
+        });
     });
   });
 
@@ -89,5 +95,44 @@ describe('test GET from API',() => {
 
     });
   });
+describe('GET /todos/:id',() => {
+  it('GET todo by ID - return the right todo with 200 code',(done) =>{
+    request(app).
+    get(`/todos/${todoIdForTest}`).
+    expect(200).
+    expect((res) => {
+      expect(res.body.text).toBe(todosForTest[0].text)
+    }).end((err,res) => {
+      if(err){
+        return done(err);
+      }
+      done();
 
+    });
+  });
+  it('GET todo by ID - send invalid (too long) id and return 404',(done) =>{
+    request(app).
+    get(`/todos/${todoIdForTest}666`).
+    expect(404).
+    end((err,res) => {
+      if(err){
+        return done(err);
+      }
+      done();
+
+    });
+  });
+  it('GET todo by ID - send invalid (worng) id and return 404',(done) =>{
+    request(app).
+    get(`/todos/5b8e905f1f08ed2782516da3`).
+    expect(404).
+    end((err,res) => {
+      if(err){
+        return done(err);
+      }
+      done();
+
+    });
+  });
+    });
 });
