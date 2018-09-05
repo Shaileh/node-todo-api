@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
+const {mongoose} = require('./../db/mongoose');
 
 
 var user = mongoose.model('Users',new mongoose.Schema({
