@@ -4,6 +4,7 @@ const {todo} = require('./models/todos');
 const {user} = require('./models/users');
 const bodyParser = require('body-parser');
 const express = require('express')
+const port = process.env.PORT || 3000;
 var app = express()
 
 
@@ -44,8 +45,8 @@ app.get('/todos/:id',(req , res) => {
   },(e) => {res.status(400).send(e)})
 });
 
-app.listen(3000, () => {
-  console.log('listen to port 3000');
+app.listen(port, () => {
+  console.log(`listen to port ${port}`);
 
 })
 
