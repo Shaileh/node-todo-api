@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node server-mongoose/server.js",
     "test": "./node_modules/mocha/bin/mocha server-mongoose/**/*.test.js",
     "test-watch": "nodemon --exec 'npm test'"
+  },
+  "engines":{
+    "node": "8.11.4"
   },
   "author": "",
   "license": "ISC",
