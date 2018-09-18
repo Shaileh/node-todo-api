@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server-mongoose/server.js",
     "test": "./node_modules/mocha/bin/mocha server-mongoose/**/*.test.js",
-    "test-watch": "nodemon --exec 'npm test'"
+    "test-watch": "nodemon --exec 'npm test'",
+    "test-watch-debug": "./node_modules/mocha/bin/mocha --inspect-brk server-mongoose/**/*.test.js"
   },
   "engines":{
     "node": "8.11.4"
