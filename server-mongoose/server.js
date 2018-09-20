@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const {mongoose} = require('./db/mongoose');
 const {ObjectID} = require('mongodb');
 const {todo} = require('./models/todos');
@@ -60,6 +61,22 @@ app.delete('/todos/:id',(req,res) => {
   },(e) => {res.status(400).send()});
 
 
+});
+
+app.patch('/todos/:id',(req,res) => {
+  var {id} = req.params; // the same as var id = req.params.id
+  var body = _.pick(req.body,['text','completed']);//its take to paramters from the object to new object.
+
+  if(!ObjectID.isValid(id)){
+    return res.status(404).send();
+  }
+
+  todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
+    if(!updatedTodo){
+      return res.status(404).send();
+    }
+    res.status(200).send(updatedTodo);
+  },(e) => {res.status(400).send()});
 });
 app.listen(port, () => {
   console.log(`listen to port ${port}`);

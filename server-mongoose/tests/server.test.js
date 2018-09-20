@@ -185,12 +185,14 @@ describe('Delete /todos/:id', () => {
         expect(todos.length).toBe(1);
         done();
       });
-
-
    });
-
-
  });
+it('Should return 404 if todo not found', (done) => {
+  request(app).
+  delete()
+
+});
+
 
 
 });
