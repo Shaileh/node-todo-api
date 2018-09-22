@@ -1,5 +1,6 @@
 const expect = require('expect');
 const request = require('supertest');
+const {ObjectID} = require('mongodb');
 
 const {
   app
@@ -187,12 +188,41 @@ describe('Delete /todos/:id', () => {
       });
    });
  });
-it('Should return 404 if todo not found', (done) => {
-  request(app).
-  delete()
-
+ it('Should remove a todo -ID not found',(done) => {
+   request(app).
+   delete(`/todos/${new ObjectID}`).
+   expect(404).
+   end(done);
+ });
+ it('Should remove a todo - bad ID',(done) => {
+   request(app).
+   delete(`/todos/sdfk`).
+   expect(404).
+   end(done);
+ });
 });
 
+describe('Update /todos/:id', () => {
+  beforeEach('drop the db before each test', (done) => {
+    todo.remove({}).then(() => {
+      todo.insertMany(todosForTest).then((docs) => {
+        todoIdForTest = docs[0]._id;
+        done();
+      });
+    });
+  });
+   it('Should update a todo', (done) => {
+     var newTodoBody = {text:"text test after update",completed: true};
+     request(app).
+     patch(`/todos/${todoIdForTest.toString()}`).
+     send(newTodoBody).
+     expect(200).
+     expect((res) => {
+       expect(res.body.text).toBe(newTodoBody.text);
+       expect(res.body.completed).toBe(true);
+     }).
+     end(done);
 
+   });
 
 });
