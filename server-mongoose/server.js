@@ -71,12 +71,27 @@ app.patch('/todos/:id',(req,res) => {
     return res.status(404).send();
   }
 
-  todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
+  if(_.isBoolean(body.completed) && body.completed){
+    body.completedAt = new Date().getTime();
+  }else{
+    // console.log(`the res is: ${_.isBoolean(body.completed)}, ${body.completed},the body.completed ${typeof body.completed}`);
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  // todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
+  //   if(!updatedTodo){
+  //     return res.status(404).send();
+  //   }
+  //   res.status(200).send(updatedTodo);
+  // },(e) => {res.status(400).send(e)});
+
+  todo.findOneAndUpdate({_id:id},{$set: body},{new:true}).then((updatedTodo) => {
     if(!updatedTodo){
       return res.status(404).send();
     }
     res.status(200).send(updatedTodo);
-  },(e) => {res.status(400).send()});
+  },(e) => {res.status(400).send(e)});
 });
 
 

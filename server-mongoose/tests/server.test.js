@@ -222,7 +222,18 @@ describe('Update /todos/:id', () => {
        expect(res.body.completed).toBe(true);
      }).
      end(done);
-
    });
-
+    it('Should update a todo - ID not found', (done) => {
+      request(app).
+      patch(`/todos/${new ObjectID}`).
+      expect(404).
+      end(done);
+    });
+    it('Should update a todo - bad ID',(done) => {
+      request(app).
+      delete(`/todos/sdfk`).
+      expect(404).
+      end(done);
+    });
+    
 });
