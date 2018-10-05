@@ -2,19 +2,10 @@ const expect = require('expect');
 const request = require('supertest');
 const {ObjectID} = require('mongodb');
 
-const {
-  app
-} = require('./../server.js');
-const {
-  todo
-} = require('./../models/todos.js');
-
-var todosForTest = [{
-  text: "test Text"
-}, {
-  text: "test Text 2"
-}];
-var todoIdForTest;
+const {app} = require('./../server.js');
+const {todo} = require('./../models/todos.js');
+const {User} = require('./../models/users');
+const {populateTodos, todosForTest,users,populateUsers} = require('./seed/seed');
 
 
 
@@ -79,19 +70,9 @@ describe('POST', () => {
 });
 
 
+
 describe('GET', () => {
-
-  beforeEach('drop the db before each test', (done) => {
-    todo.remove({}).then(() => {
-      todo.insertMany(todosForTest).then((docs) => {
-        todoIdForTest = docs[0]._id;
-        // console.log(docs);
-        // worngID = todoIdForTest.replace('todoIdForTest.charAt(3)','t');
-        done();
-      });
-    });
-  });
-
+  beforeEach('drop the db before each test', populateTodos);
 
 
   it('Should return all Todos form db', (done) => {
@@ -120,7 +101,7 @@ describe('GET', () => {
   describe('GET /todos/:id', () => {
     it('GET todo by ID - return the right todo with 200 code', (done) => {
       request(app).
-      get(`/todos/${todoIdForTest}`).
+      get(`/todos/${todosForTest[0]._id.toHexString()}`).
       expect(200).
       expect((res) => {
         expect(res.body.text).toBe(todosForTest[0].text)
@@ -134,7 +115,7 @@ describe('GET', () => {
     });
     it('GET todo by ID - send invalid (too long) id and return 404', (done) => {
       request(app).
-      get(`/todos/${todoIdForTest}666`).
+      get(`/todos/${todosForTest[0]._id.toHexString()}666`).
       expect(404).
       end((err, res) => {
         if (err) {
@@ -160,20 +141,10 @@ describe('GET', () => {
 });
 
 describe('Delete /todos/:id', () => {
-  beforeEach('drop the db before each test', (done) => {
-    todo.remove({}).then(() => {
-      todo.insertMany(todosForTest).then((docs) => {
-        todoIdForTest = docs[0]._id;
-        // debugger
-        // console.log(docs);
-        // worngID = todoIdForTest.replace('todoIdForTest.charAt(3)','t');
-        done();
-      });
-    });
-  });
+  beforeEach('drop the db before each test', populateTodos);
  it('Should remove a todo', (done) => {
    request(app).
-   delete(`/todos/${todoIdForTest.toString()}`).
+   delete(`/todos/${todosForTest[0]._id.toHexString()}`).
    expect(200).
    expect((res)=>{
      expect(res.body.text).toBe(todosForTest[0].text);
@@ -203,18 +174,11 @@ describe('Delete /todos/:id', () => {
 });
 
 describe('Update /todos/:id', () => {
-  beforeEach('drop the db before each test', (done) => {
-    todo.remove({}).then(() => {
-      todo.insertMany(todosForTest).then((docs) => {
-        todoIdForTest = docs[0]._id;
-        done();
-      });
-    });
-  });
+  beforeEach('drop the db before each test', populateTodos);
    it('Should update a todo', (done) => {
      var newTodoBody = {text:"text test after update",completed: true};
      request(app).
-     patch(`/todos/${todoIdForTest.toString()}`).
+     patch(`/todos/${todosForTest[0]._id.toHexString()}`).
      send(newTodoBody).
      expect(200).
      expect((res) => {
@@ -235,5 +199,80 @@ describe('Update /todos/:id', () => {
       expect(404).
       end(done);
     });
-    
+
+});
+describe('Users tests', () => {
+    beforeEach(populateUsers);
+    describe('GET /users/me', () => {
+      it('should return user if authenticated', (done) =>{
+    request(app).
+      get('/users/me').
+      set('x-auth',users[0].tokens[0].token).
+      expect(200).
+      expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString()),
+        expect(res.body.email).toBe(users[0].email)
+      }).
+      end(done)
+  });
+
+  it('should return 401 if not authenticated', (done) => {
+    request(app).
+      get('/users/me').
+      expect(401).
+      expect((res) =>{
+        expect(res.body).toEqual({});
+      }).
+      end(done)
+  });
+
+  });
+  describe('POSR /users', () => {
+    it('should create user', (done) => {
+      var newUser = {email:'superTestUser@sdf.com',password:'superTestUser'};
+      request(app).
+      post('/users').
+      send(newUser).
+      expect(200).
+      expect((res) => {
+        expect(res.headers['x-auth']).toBeTruthy();
+        expect(res.body._id).toBeTruthy();
+        expect(res.body.email).toBe(newUser.email);
+      }).
+      end((err, res) => {
+        if(err){
+          return done(err);
+        }
+
+        User.findOne({email: newUser.email}).then((user) => {
+          expect(user).toBeTruthy();
+          expect(user.password).not.toBe(newUser.passwors);
+          done();
+
+        },(e) => done);
+      })
+    });
+    it('should return validation errors if request invalide',(done) => {
+      var newUser = {email:'sdf.com',password:'bla'};
+      request(app).
+      post('/users').
+      send(newUser).
+      expect(400).
+      expect((res) => {
+        expect(res.body.errors.email).toBeTruthy();
+        expect(res.body.errors.password).toBeTruthy();
+        // done();
+      }).
+      end(done)
+    });
+    it('should not create user if email in use', (done) => {
+      request(app).
+      post('/users').
+      send(users[1]).
+      expect(400).
+      end(done);
+    });
+
+
+  });
 });
