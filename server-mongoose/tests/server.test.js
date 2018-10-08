@@ -272,7 +272,62 @@ describe('Users tests', () => {
       expect(400).
       end(done);
     });
-
-
   });
+
+describe('POSR /users/login', () => {
+  it('should login user and return auth token',(done) => {
+    var userNum = 1;
+    request(app).
+    post('/users/login').
+    send(users[userNum]).
+    expect(200).
+    expect((res) => {
+      expect(res.headers['x-auth']).toBeTruthy();
+      expect(res.body._id).toBe(users[userNum]._id.toHexString());
+      expect(res.body.email).toBe(users[userNum].email);
+    }).
+    end((err, res) => {
+      if(err){
+        return done(err);
+      }
+
+      User.findById(users[1]._id.toHexString()).then((user) => {
+        if(!user){
+          return done(err);
+        }
+        expect(user.tokens[0]).toMatchObject({
+          access:'auth',
+          token: res.headers['x-auth']
+        });
+        done();
+      }).catch((e) => done(e));
+    });
+  });
+  it('should reject inValid login', (done) => {
+    var user = {email: 'invlid@invalid.com',password:'ivalidpass'};
+    request(app).
+    post('/users/login').
+    send(user).
+    expect(401).
+    expect((res) => {
+      expect(res.headers['x-auth']).not.toBeTruthy();
+    }).
+    end((err,res) =>{
+      if(err){
+        return done(err);
+      }
+
+      User.findById(users[1]._id.toHexString()).then((user) => {
+        if(!user){
+          return done(err);
+        }
+        expect(user.tokens.length).toBe(0)
+        done();
+      }).catch((e) => done(e));
+
+    })
+  });
+});
+
+
 });

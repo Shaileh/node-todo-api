@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node server-mongoose/server.js",
+    "start-debug": "node --inspect-brk server-mongoose/server.js",
     "test": "export NODE_ENV=test || SET \"NODE_ENV=test\" && ./node_modules/mocha/bin/mocha server-mongoose/**/*.test.js",
     "test-watch": "nodemon --exec 'npm test'",
-    "test-watch-debug": "./node_modules/mocha/bin/mocha --inspect-brk server-mongoose/**/*.test.js"
+    "test-watch-debug": "export NODE_ENV=test || SET \"NODE_ENV=test\" && ./node_modules/mocha/bin/mocha --inspect-brk server-mongoose/**/*.test.js"
   },
   "engines": {
     "node": "8.11.4"

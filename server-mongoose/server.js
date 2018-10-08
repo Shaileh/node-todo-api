@@ -7,6 +7,7 @@ const {User} = require('./models/users');
 const {authenticate} = require('./middleware/authenticate');
 const bodyParser = require('body-parser');
 const express = require('express')
+const bcrypt = require('bcryptjs');
 const port = process.env.PORT || 3000;
 var app = express()
 
@@ -118,6 +119,34 @@ app.get('/users/me', authenticate ,(req,res) => {
 
 });
 
+app.post('/users/login', (req,res) => {
+  // debugger;
+  if(req.body.email && req.body.password){
+    var body = _.pick(req.body,['email','password']);
+  }
+  else{
+    return res.status(401).send({error:'missing fields'});
+  }
+  // User.findOne({email:body.email}).then((doc) => {
+  //   if(!doc){
+  //     return res.status(401).send();
+  //   }
+  //   bcrypt.compare(body.password,doc.password).then((val) =>{
+  //     if(val){
+  //        return res.header('x-auth',doc.tokens[0].token).send(doc);
+  //
+  //     }
+  //     res.status(401).send();
+  //   });
+  // });
+  User.findByCredentials(body.email,body.password).then((user) => {
+    return user.generateAuthToken().then((token) => {
+      res.header('x-auth',token).send(user);
+    });
+  }).catch((e) =>{
+    res.status(401).send(e);
+  });
+});
 
 app.listen(port, () => {
   console.log(`listen to port ${port}`);
