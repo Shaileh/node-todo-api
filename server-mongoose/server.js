@@ -41,12 +41,15 @@ app.get('/todos',authenticate, (req , res) => {
   });
 });
 
-app.get('/todos/:id',(req , res) => {
+app.get('/todos/:id',authenticate, (req , res) => {
   var {id} = req.params;
   if(!ObjectID.isValid(id)){
     return res.status(404).send();
   }
-  Todo.findById(id).then((todo) => {
+  Todo.findOne({
+    _id:id,
+    _creator: req.user._id
+  }).then((todo) => {
     if(!todo){
       return res.status(404).send();
     }
@@ -55,12 +58,15 @@ app.get('/todos/:id',(req , res) => {
 });
 
 
-app.delete('/todos/:id',(req,res) => {
+app.delete('/todos/:id',authenticate,(req,res) => {
   var {id} = req.params;
   if(!ObjectID.isValid(id)){
     return res.status(404).send({error: "inValid ID"});
   }
-  Todo.findByIdAndDelete(id).then((todo) => {
+  Todo.findOneAndDelete({
+    _id:id,
+    _creator: req.user._id
+  }).then((todo) => {
     if(!todo){
       return res.status(404).send();
     }
@@ -71,7 +77,7 @@ app.delete('/todos/:id',(req,res) => {
 
 });
 
-app.patch('/todos/:id',(req,res) => {
+app.patch('/todos/:id',authenticate, (req,res) => {
   var {id} = req.params; // the same as var id = req.params.id
   var body = _.pick(req.body,['text','completed']);//its take to paramters from the object to new object.
 
@@ -82,19 +88,11 @@ app.patch('/todos/:id',(req,res) => {
   if(_.isBoolean(body.completed) && body.completed){
     body.completedAt = new Date().getTime();
   }else{
-    // console.log(`the res is: ${_.isBoolean(body.completed)}, ${body.completed},the body.completed ${typeof body.completed}`);
     body.completed = false;
     body.completedAt = null;
   }
 
-  // Todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
-  //   if(!updatedTodo){
-  //     return res.status(404).send();
-  //   }
-  //   res.status(200).send(updatedTodo);
-  // },(e) => {res.status(400).send(e)});
-
-  Todo.findOneAndUpdate({_id:id},{$set: body},{new:true}).then((updatedTodo) => {
+  Todo.findOneAndUpdate({_id:id,_creator: req.user._id},{$set: body},{new:true}).then((updatedTodo) => {
     if(!updatedTodo){
       return res.status(404).send();
     }

@@ -116,22 +116,33 @@
           it('GET todo by ID - return the right todo with 200 code', (done) => {
             request(app).
             get(`/todos/${todosForTest[0]._id.toHexString()}`).
+            set('x-auth', users[0].tokens[0].token).
             expect(200).
             expect((res) => {
               expect(res.body.text).toBe(todosForTest[0].text)
             }).
             end(done)
           });
+
+          it('GET todo by ID - should not return todo that created by other user', (done) => {
+            request(app).
+            get(`/todos/${todosForTest[1]._id.toHexString()}`).
+            set('x-auth', users[0].tokens[0].token).
+            expect(404).
+            end(done)
+          });
           //-----------------
           it('GET todo by ID - send invalid (too long) id and return 404', (done) => {
             request(app).
             get(`/todos/${todosForTest[0]._id.toHexString()}666`).
+            set('x-auth', users[0].tokens[0].token).
             expect(404).
             end(done);
           });
           it('GET todo by ID - send invalid (worng) id and return 404', (done) => {
             request(app).
             get(`/todos/5b8e905f1f08ed2782516da3`).
+            set('x-auth', users[0].tokens[0].token).
             expect(404).
             end(done);
           });
@@ -141,6 +152,7 @@
         it('Should remove a todo', (done) => {
           request(app).
           delete(`/todos/${todosForTest[0]._id.toHexString()}`).
+          set('x-auth', users[0].tokens[0].token).
           expect(200).
           expect((res) => {
             expect(res.body.text).toBe(todosForTest[0].text);
@@ -155,15 +167,32 @@
             });
           });
         });
+        it('Should not remove a todo that created by other user', (done) => {
+          request(app).
+          delete(`/todos/${todosForTest[1]._id.toHexString()}`).
+          set('x-auth', users[0].tokens[0].token).
+          expect(404).
+          end((err, res) => {
+            if (err) {
+              return done(err);
+            }
+            Todo.find({}).then((todos) => {
+              expect(todos.length).toBe(2);
+              done();
+            });
+          });
+        });
         it('Should remove a todo -ID not found', (done) => {
           request(app).
           delete(`/todos/${new ObjectID}`).
+          set('x-auth', users[0].tokens[0].token).
           expect(404).
           end(done);
         });
         it('Should remove a todo - bad ID', (done) => {
           request(app).
           delete(`/todos/sdfk`).
+          set('x-auth', users[0].tokens[0].token).
           expect(404).
           end(done);
         });
@@ -177,6 +206,7 @@
           };
           request(app).
           patch(`/todos/${todosForTest[0]._id.toHexString()}`).
+          set('x-auth', users[0].tokens[0].token).
           send(newTodoBody).
           expect(200).
           expect((res) => {
@@ -185,15 +215,41 @@
           }).
           end(done);
         });
+        it('Should not update a todo that created by other user', (done) => {
+          var newTodoBody = {
+            text: "text test after update",
+            completed: true
+          };
+          request(app).
+          patch(`/todos/${todosForTest[1]._id.toHexString()}`).
+          set('x-auth', users[0].tokens[0].token).
+          send(newTodoBody).
+          expect(404).
+          end((err,res) => {
+            if(err){
+              return done(err);
+            }
+            Todo.find({}).then((todos) => {
+              if(!todos){
+                done();
+              }
+              expect(todos[1].text).toBe(todosForTest[1].text);
+              expect(todos[1].completed).toBe(false);
+              done();
+            });
+          });
+        });
         it('Should update a todo - ID not found', (done) => {
           request(app).
           patch(`/todos/${new ObjectID}`).
+          set('x-auth', users[0].tokens[0].token).
           expect(404).
           end(done);
         });
         it('Should update a todo - bad ID', (done) => {
           request(app).
           delete(`/todos/sdfk`).
+          set('x-auth', users[0].tokens[0].token).
           expect(404).
           end(done);
         });
@@ -248,7 +304,7 @@
               if (!user) {
                 return done(err);
               }
-              expect(user.tokens[0]).toMatchObject({
+              expect(user.tokens[1]).toMatchObject({
                 access: 'auth',
                 token: res.headers['x-auth']
               });
@@ -277,7 +333,7 @@
               if (!user) {
                 return done();
               }
-              expect(user.tokens.length).toBe(0)
+              expect(user.tokens.length).toBe(1)
               done();
             }).catch((e) => done(e));
 
