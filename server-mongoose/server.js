@@ -2,7 +2,7 @@ require('./config/config.js');
 const _ = require('lodash');
 const {mongoose} = require('./db/mongoose');
 const {ObjectID} = require('mongodb');
-const {todo} = require('./models/todos');
+const {Todo} = require('./models/todos');
 const {User} = require('./models/users');
 const {authenticate} = require('./middleware/authenticate');
 const bodyParser = require('body-parser');
@@ -15,9 +15,12 @@ var app = express()
 // parse application/json
 app.use(bodyParser.json());
 
-app.post('/todos',(req , res) => {
-  // console.log(req.body);
-  new todo (req.body).save().then((doc) => {
+app.post('/todos',authenticate, (req , res) => {
+  var todo = new Todo ({
+    text: req.body.text,
+    _creator: req.user._id
+  })
+  todo.save().then((doc) => {
     res.send(doc);
     // console.log(`This doc: ${doc} is saved to db`);
   },(e) => {
@@ -27,8 +30,10 @@ app.post('/todos',(req , res) => {
 });
 
 
-app.get('/todos',(req , res) => {
-  todo.find({}).then((query) => {
+app.get('/todos',authenticate, (req , res) => {
+  Todo.find({
+    _creator: req.user._id
+  }).then((query) => {
     res.send({query});
   },(e) => {
     res.status(400).send(e);
@@ -41,7 +46,7 @@ app.get('/todos/:id',(req , res) => {
   if(!ObjectID.isValid(id)){
     return res.status(404).send();
   }
-  todo.findById(id).then((todo) => {
+  Todo.findById(id).then((todo) => {
     if(!todo){
       return res.status(404).send();
     }
@@ -55,7 +60,7 @@ app.delete('/todos/:id',(req,res) => {
   if(!ObjectID.isValid(id)){
     return res.status(404).send({error: "inValid ID"});
   }
-  todo.findByIdAndDelete(id).then((todo) => {
+  Todo.findByIdAndDelete(id).then((todo) => {
     if(!todo){
       return res.status(404).send();
     }
@@ -82,14 +87,14 @@ app.patch('/todos/:id',(req,res) => {
     body.completedAt = null;
   }
 
-  // todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
+  // Todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((updatedTodo) => {
   //   if(!updatedTodo){
   //     return res.status(404).send();
   //   }
   //   res.status(200).send(updatedTodo);
   // },(e) => {res.status(400).send(e)});
 
-  todo.findOneAndUpdate({_id:id},{$set: body},{new:true}).then((updatedTodo) => {
+  Todo.findOneAndUpdate({_id:id},{$set: body},{new:true}).then((updatedTodo) => {
     if(!updatedTodo){
       return res.status(404).send();
     }
@@ -127,18 +132,6 @@ app.post('/users/login', (req,res) => {
   else{
     return res.status(401).send({error:'missing fields'});
   }
-  // User.findOne({email:body.email}).then((doc) => {
-  //   if(!doc){
-  //     return res.status(401).send();
-  //   }
-  //   bcrypt.compare(body.password,doc.password).then((val) =>{
-  //     if(val){
-  //        return res.header('x-auth',doc.tokens[0].token).send(doc);
-  //
-  //     }
-  //     res.status(401).send();
-  //   });
-  // });
   User.findByCredentials(body.email,body.password).then((user) => {
     return user.generateAuthToken().then((token) => {
       res.header('x-auth',token).send(user);

@@ -1,5 +1,5 @@
 const {ObjectID} = require('mongodb');
-const {todo} = require('./../../models/todos');
+const {Todo} = require('./../../models/todos');
 const {User} = require('./../../models/users');
 const jwt = require('jsonwebtoken');
 
@@ -23,22 +23,24 @@ const users = [{
 
 const todosForTest = [{
   _id : new ObjectID(),
-  text: "test Text"
+  text: "test Text",
+  _creator: userOneID
 }, {
   id : new ObjectID(),
-  text: "test Text 2"
+  text: "test Text 2",
+  _creator: userTwoID
 }];
 
 var populateTodos = (done) => {
-  todo.remove({}).then(() => {
-    todo.insertMany(todosForTest).then((docs) => {
+  Todo.deleteMany({}).then(() => {
+    Todo.insertMany(todosForTest).then((docs) => {
       done();
     });
   });
 };
 
 var populateUsers = (done) => {
-  User.remove({}).then(() => {
+  User.deleteMany({}).then(() => {
     var userOne = new User(users[0]).save();
     var userTwo = new User(users[1]).save();
 
