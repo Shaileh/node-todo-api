@@ -30,39 +30,11 @@ var UserSchema = new mongoose.Schema({
     }
   }]
 });
-// var UserSchema = new mongoose.Schema({
-//   email: {
-//     type: String,
-//     required: true,
-//     trim: true,
-//     minlength: 1,
-//     unique: true,
-//     validate: {
-//       validator: validator.isEmail,
-//       message: '{VALUE} is not a valid email'
-//     }
-//   },
-//   password: {
-//     type: String,
-//     require: true,
-//     minlength: 6
-//   },
-//   tokens: [{
-//     access: {
-//       type: String,
-//       required: true
-//     },
-//     token: {
-//       type: String,
-//       required: true
-//     }
-//   }]
-// });
 
 UserSchema.methods.generateAuthToken = function (){
   var user = this;
   var access = 'auth';
-  var token  = jwt.sign({_id:user._id.toHexString(), access },'abc123').toString();
+  var token  = jwt.sign({_id:user._id.toHexString(), access },process.env.JWT_SECRET).toString();
 
   // user.tokens = user.tokens.concat({access,token});
   user.tokens.push({access, token});
@@ -90,16 +62,6 @@ UserSchema.statics.findByCredentials = function (email, password){
       return Promise.resolve(user);
     },(e) => {return Promise.reject(e)});
 
-    // return new Promise ((resolve,reject) => {
-    //   bcrypt.compare(password,user.password,(err,res) => {//check the password with callback function.
-    //     if(err){
-    //       reject();
-    //     }
-    //     if(res){
-    //       resolve(user);
-    //     }
-    //   });
-    // });
   });
 }
 
@@ -108,11 +70,9 @@ UserSchema.statics.findByToken = function (token){
   var decoded;
 
   try{
-    decoded = jwt.verify(token,'abc123');
+    decoded = jwt.verify(token,process.env.JWT_SECRET);
   }catch(e){
-    // return new Promise ((resolve,reject) => {
-    //   reject({});
-    // });
+
     return Promise.reject({});
   }
 

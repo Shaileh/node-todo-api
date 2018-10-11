@@ -258,6 +258,61 @@
   });
 
   describe('Users Tests', () => {
+    describe('POST /users', () => {
+      it('should create user', (done) => {
+        var newUser = {
+          email: 'superTestUser@sdf.com',
+          password: 'superTestUser'
+        };
+        request(app).
+        post('/users').
+        send(newUser).
+        expect(200).
+        expect((res) => {
+          expect(res.headers['x-auth']).toBeTruthy();
+          expect(res.body._id).toBeTruthy();
+          expect(res.body.email).toBe(newUser.email);
+        }).
+        end((err, res) => {
+          if (err) {
+            return done(err);
+          }
+
+          User.findOne({
+            email: newUser.email
+          }).then((user) => {
+            expect(user).toBeTruthy();
+            expect(user.password).not.toBe(newUser.passwors);
+            done();
+
+          }, (e) => done);
+        })
+      });
+      it('should return validation errors if request invalide', (done) => {
+        var newUser = {
+          email: 'sdf.com',
+          password: 'bla'
+        };
+        request(app).
+        post('/users').
+        send(newUser).
+        expect(400).
+        expect((res) => {
+          expect(res.body.errors.email).toBeTruthy();
+          expect(res.body.errors.password).toBeTruthy();
+          // done();
+        }).
+        end(done)
+      });
+      it('should not create user if email in use', (done) => {
+        request(app).
+        post('/users').
+        send(users[1]).
+        expect(400).
+        end(done);
+      });
+      //----------------End of POST /users block ----------------------------
+    });
     describe('needs populateUsers', () => {
       beforeEach(populateUsers);
       describe('GET /users/me', () => {
@@ -364,60 +419,5 @@
         //----------------End of DELETE /users/me/token block ----------------------------
       });
       // end of needs populateUsers describe block
-    });
-    describe('POST /users', () => {
-      it('should create user', (done) => {
-        var newUser = {
-          email: 'superTestUser@sdf.com',
-          password: 'superTestUser'
-        };
-        request(app).
-        post('/users').
-        send(newUser).
-        expect(200).
-        expect((res) => {
-          expect(res.headers['x-auth']).toBeTruthy();
-          expect(res.body._id).toBeTruthy();
-          expect(res.body.email).toBe(newUser.email);
-        }).
-        end((err, res) => {
-          if (err) {
-            return done(err);
-          }
-
-          User.findOne({
-            email: newUser.email
-          }).then((user) => {
-            expect(user).toBeTruthy();
-            expect(user.password).not.toBe(newUser.passwors);
-            done();
-
-          }, (e) => done);
-        })
-      });
-      it('should return validation errors if request invalide', (done) => {
-        var newUser = {
-          email: 'sdf.com',
-          password: 'bla'
-        };
-        request(app).
-        post('/users').
-        send(newUser).
-        expect(400).
-        expect((res) => {
-          expect(res.body.errors.email).toBeTruthy();
-          expect(res.body.errors.password).toBeTruthy();
-          // done();
-        }).
-        end(done)
-      });
-      it('should not create user if email in use', (done) => {
-        request(app).
-        post('/users').
-        send(users[1]).
-        expect(400).
-        end(done);
-      });
-      //----------------End of POST /users block ----------------------------
     });
   });
