@@ -212,6 +212,7 @@
           expect((res) => {
             expect(res.body.text).toBe(newTodoBody.text);
             expect(res.body.completed).toBe(true);
+            expect(typeof res.body.completedAt).toBe('number');
           }).
           end(done);
         });
